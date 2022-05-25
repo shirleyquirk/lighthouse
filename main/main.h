@@ -22,3 +22,5 @@ extern char ip[16];
 extern char gw[16];
 
 extern nvs_handle_t preferences;
+
+#define CHE

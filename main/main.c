@@ -122,20 +122,10 @@ esp_err_t wifi_manager_handler(httpd_req_t *req)
 	(void)key;
 	printf("ssid: %s pass: %s ip: %s gw: %s\n",ssid,pass,ip,gw); 
 	nvs_set_str(preferences,"ssid",ssid);
-	esp_err_t err = nvs_set_str(preferences,"pass",pass);
-	if(err != ESP_OK){
-		ESP_LOGE(TAG,"error setting pass\n,%d",err);
-	}else{
-		ESP_LOGI(TAG,"successfully set pass\n");
-	}
+	ESP_ERROR_CHECK(nvs_set_str(preferences,"pass",pass));
 	nvs_set_str(preferences,"ip",ip);
 	nvs_set_str(preferences,"gw",gw);
-	err = nvs_commit(preferences);
-	if (err != ESP_OK){
-		ESP_LOGE(TAG,"error committing preference,%d\n",err);
-	}else{
-		ESP_LOGI(TAG,"successfully committed prefs\n");
-	}
+	ESP_ERROR_CHECK(nvs_commit(preferences));
 	return ESP_OK;
 }
 /*
@@ -194,7 +184,7 @@ void app_main(void) {
 
 	ESP_ERROR_CHECK(ret);
 	nvs_open("storage",NVS_READWRITE,&preferences);
-	size_t len;
+	size_t len=sizeof(ssid);
 	ret = nvs_get_str(preferences,"ssid",ssid,&len);
 	switch (ret)
 	{
@@ -207,6 +197,7 @@ void app_main(void) {
 		default:
 			ESP_LOGE(TAG,"error reading ssid from nvs\n");
 	}
+	len=sizeof(pass);
 	ret = nvs_get_str(preferences,"pass",pass,&len);
 	switch (ret)
 	{
@@ -217,9 +208,12 @@ void app_main(void) {
 			ESP_LOGI(TAG,"no saved password, using default: %s\n",pass);
 			break;
 		default:
-			ESP_LOGE(TAG,"error reading pass from nvs\n");
+			ESP_LOGE(TAG,"error reading pass from nvs,%s\n",esp_err_to_name(ret));
 	}
+	ESP_ERROR_CHECK(ret);
+	len=sizeof(ip);
 	ret = nvs_get_str(preferences,"ip",ip,&len);
+	len=sizeof(gw);
 	ret = nvs_get_str(preferences,"gw",gw,&len);
 	(void)len;
 	//ESP_ERROR_CHECK(softap_init());
