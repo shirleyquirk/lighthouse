@@ -1,0 +1,3 @@
+[submodule "OSC"]
+	path = OSC
+	url = http://github.com/CNMAT/OSC
