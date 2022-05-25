@@ -67,13 +67,27 @@ endmenu
 menu "WIFI Settings"
 
     config WIFI_SSID
-        string "Wifi SSID"
+        string "AP SSID"
         default "ESP OTA Update"
+    config WIFI_PASS
+        string "AP pass"
+        default "Badger101"
+    config STA_SSID
+        string "Network SSID"
+        default "engorgio"
+    config STA_PASS
+        string "Network pass"
+        default "interwebz"
     config IPV4_ADDR
         string "IPV4 Address"
         default "192.168.0.10"
+    config IPV4_GW
+        string "IPV4 GW"
     config OSC_PORT
         int "OSC Port"
         range 0 65535
         default 1234
+    config DOUBLERESET_TIMEOUT
+        int "Double Reset Timeout, ms"
+        default 10000
 endmenu

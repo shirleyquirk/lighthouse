@@ -1,16 +1,12 @@
-#include <string.h>
+#include "main.h"
+#include "wifi.h"
+#include "doublereset.h"
 
-#include <freertos/FreeRTOS.h>
-#include <esp_http_server.h>
-#include <freertos/task.h>
-#include <esp_ota_ops.h>
-#include <esp_system.h>
-#include <nvs_flash.h>
-#include <sys/param.h>
-#include <esp_wifi.h>
-#include "leds.h"
-#include "esp_err.h"
-#include "esp_log.h"
+char ssid[32] = CONFIG_STA_SSID;
+char pass[32] = CONFIG_STA_PASS;
+char ip[16] = CONFIG_IPV4_ADDR;
+char gw[16] = CONFIG_IPV4_GW;
+nvs_handle_t preferences;
 
 static const char TAG[] = "gobo";
 /*
@@ -72,13 +68,64 @@ esp_err_t update_post_handler(httpd_req_t *req)
 
 	return ESP_OK;
 }
+
+void urldecode2(char *dst, const char *src)
+{
+        char a, b;
+        while (*src) {
+                if ((*src == '%') &&
+                    ((a = src[1]) && (b = src[2])) &&
+                    (isxdigit(a) && isxdigit(b))) {
+                        if (a >= 'a')
+                                a -= 'a'-'A';
+                        if (a >= 'A')
+                                a -= ('A' - 10);
+                        else
+                                a -= '0';
+                        if (b >= 'a')
+                                b -= 'a'-'A';
+                        if (b >= 'A')
+                                b -= ('A' - 10);
+                        else
+                                b -= '0';
+                        *dst++ = 16*a+b;
+                        src+=3;
+                } else if (*src == '+') {
+                        *dst++ = ' ';
+                        src++;
+                } else {
+                        *dst++ = *src++;
+                }
+        }
+        *dst++ = '\0';
+}
+
 esp_err_t wifi_manager_handler(httpd_req_t *req)
 {
-	char content[256];
+	char content[256]={};
 	size_t recv_size = MIN(req->content_len,sizeof(content));
 	int recv_len  = httpd_req_recv(req,content,recv_size);
-	printf("content length: %d, copied: %d\n%s\n",content);
-	//dispatch
+	(void)recv_len;
+	//printf("content length: %d, copied: %d\n%s\n",recv_size,recv_len,content);
+	
+	//parse out ssid=<url-encoded>&pass=<urlencoded>&ip=<ip>&gateway=<gateway>
+	char *key = strtok(content,"=");
+	char *urlenc = strtok(NULL,"&");
+	urldecode2(ssid,urlenc);
+	key = strtok(NULL,"=");
+	urlenc = strtok(NULL,"&");
+	urldecode2(pass,urlenc);
+	key = strtok(NULL,"=");
+	strncpy(&ip[0],strtok(NULL,"&"),16);
+	key = strtok(NULL,"=");
+	strncpy(&gw[0],strtok(NULL,"&"),16);
+	(void)key;
+	printf("ssid: %s pass: %s ip: %s gw: %s\n",ssid,pass,ip,gw); 
+	nvs_set_str(preferences,"ssid",ssid);
+	nvs_set_str(preferences,"pass",pass);
+	nvs_set_str(preferences,"ip",ip);
+	nvs_set_str(preferences,"gw",gw);
+	nvs_commit(preferences);
 	return ESP_OK;
 }
 /*
@@ -99,11 +146,11 @@ httpd_uri_t update_post = {
 };
 
 httpd_uri_t wifi_manager = {
-	.uri	= "/wifi"
+	.uri	= "/wifi",
 	.method = HTTP_POST,
 	.handler = wifi_manager_handler,
 	.user_ctx = NULL
-}
+};
 
 static esp_err_t http_server_init(void)
 {
@@ -119,41 +166,13 @@ static esp_err_t http_server_init(void)
 
 	httpd_register_uri_handler(http_server, &index_get);
 	httpd_register_uri_handler(http_server, &update_post);
+	httpd_register_uri_handler(http_server,&wifi_manager);
 
 
 	return ESP_OK;
 }
 
-/*
- * WiFi configuration
- */
-static esp_err_t softap_init(void)
-{
-	esp_err_t res = ESP_OK;
 
-	res |= esp_netif_init();
-	res |= esp_event_loop_create_default();
-	esp_netif_create_default_wifi_ap();
-
-	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-	res |= esp_wifi_init(&cfg);
-
-	wifi_config_t wifi_config = {
-		.ap = {
-			.ssid = CONFIG_WIFI_SSID,
-			.ssid_len = strlen(CONFIG_WIFI_SSID),
-			.channel = 6,
-			.authmode = WIFI_AUTH_OPEN,
-			.max_connection = 3
-		},
-	};
-
-	res |= esp_wifi_set_mode(WIFI_MODE_AP);
-	res |= esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
-	res |= esp_wifi_start();
-
-	return res;
-}
 
 void app_main(void) {
 	esp_err_t ret = nvs_flash_init();
@@ -164,7 +183,30 @@ void app_main(void) {
 	}
 
 	ESP_ERROR_CHECK(ret);
-	ESP_ERROR_CHECK(softap_init());
+	nvs_open("storage",NVS_READWRITE,&preferences);
+	size_t len;
+	ret = nvs_get_str(preferences,"ssid",ssid,&len);
+	switch (ret)
+	{
+		case ESP_OK:
+			printf("connecting to saved ssid %s\n",ssid);
+			break;
+		case ESP_ERR_NVS_NOT_FOUND:
+			printf("no saved ssid, starting softap\n");
+			break;
+		default:
+			printf("error reading ssid from nvs\n");
+	}
+	ret = nvs_get_str(preferences,"pass",pass,&len);
+	ret = nvs_get_str(preferences,"ip",ip,&len);
+	ret = nvs_get_str(preferences,"gw",gw,&len);
+	(void)len;
+	//ESP_ERROR_CHECK(softap_init());
+	if (double_reset()){
+		ESP_ERROR_CHECK(softap_init());
+	}else{
+		fast_scan();
+	}
 	ESP_ERROR_CHECK(http_server_init());
 	ledc_init();
 
