@@ -122,10 +122,20 @@ esp_err_t wifi_manager_handler(httpd_req_t *req)
 	(void)key;
 	printf("ssid: %s pass: %s ip: %s gw: %s\n",ssid,pass,ip,gw); 
 	nvs_set_str(preferences,"ssid",ssid);
-	nvs_set_str(preferences,"pass",pass);
+	esp_err_t err = nvs_set_str(preferences,"pass",pass);
+	if(err != ESP_OK){
+		ESP_LOGE(TAG,"error setting pass\n,%d",err);
+	}else{
+		ESP_LOGI(TAG,"successfully set pass\n");
+	}
 	nvs_set_str(preferences,"ip",ip);
 	nvs_set_str(preferences,"gw",gw);
-	nvs_commit(preferences);
+	err = nvs_commit(preferences);
+	if (err != ESP_OK){
+		ESP_LOGE(TAG,"error committing preference,%d\n",err);
+	}else{
+		ESP_LOGI(TAG,"successfully committed prefs\n");
+	}
 	return ESP_OK;
 }
 /*
@@ -189,15 +199,26 @@ void app_main(void) {
 	switch (ret)
 	{
 		case ESP_OK:
-			printf("connecting to saved ssid %s\n",ssid);
+			ESP_LOGI(TAG,"connecting to saved ssid %s\n",ssid);
 			break;
 		case ESP_ERR_NVS_NOT_FOUND:
-			printf("no saved ssid, starting softap\n");
+			ESP_LOGI(TAG,"no saved ssid, using default: %s\n",ssid);
 			break;
 		default:
-			printf("error reading ssid from nvs\n");
+			ESP_LOGE(TAG,"error reading ssid from nvs\n");
 	}
 	ret = nvs_get_str(preferences,"pass",pass,&len);
+	switch (ret)
+	{
+		case ESP_OK:
+			ESP_LOGI(TAG,"using stored password %s\n",pass);
+			break;
+		case ESP_ERR_NVS_NOT_FOUND:
+			ESP_LOGI(TAG,"no saved password, using default: %s\n",pass);
+			break;
+		default:
+			ESP_LOGE(TAG,"error reading pass from nvs\n");
+	}
 	ret = nvs_get_str(preferences,"ip",ip,&len);
 	ret = nvs_get_str(preferences,"gw",gw,&len);
 	(void)len;

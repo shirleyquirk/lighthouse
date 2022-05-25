@@ -14,7 +14,17 @@ static void clear_doublereset(TimerHandle_t xTimer){
 bool double_reset(){
     uint32_t doublereset=0;
     esp_err_t ret = nvs_get_u32(preferences,"doublereset",&doublereset);
-    (void)ret;
+    switch (ret)
+	{
+		case ESP_OK:
+			ESP_LOGI(TAG,"read doublereset from nvs: %d\n",doublereset);
+			break;
+		case ESP_ERR_NVS_NOT_FOUND:
+			ESP_LOGI(TAG,"no doublereset found in nvs\n");
+			break;
+		default:
+			ESP_LOGE(TAG,"error reading doublereset from nvs\n");
+	}
 	if (doublereset==1)
     {
 		nvs_set_u32(preferences,"doublereset",0);
@@ -41,6 +51,7 @@ bool double_reset(){
             }
         }
 	}
+    ESP_LOGI(TAG,"double_reset is %s",doublereset?"true":"false");
     return (bool)doublereset;
 
 }
