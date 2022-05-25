@@ -2,4 +2,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <stdio.h>
-void ledc_init();
+extern "C"{
+    void ledc_init();
+}

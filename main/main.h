@@ -15,12 +15,16 @@
 #include "esp_log.h"
 #include "string.h"
 #include "nvs.h"
+#include "OSC/OSCMessage.h"
+#include "Arduino.h"
 
+extern "C"{
+    void app_main();
+}
 extern char ssid[32];
 extern char pass[32];
 extern char ip[16];
 extern char gw[16];
 
-extern nvs_handle_t preferences;
 
-#define CHE
+extern nvs_handle_t preferences;
