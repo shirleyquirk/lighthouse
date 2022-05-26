@@ -1,5 +1,7 @@
 #include "math.h"
 #include "leds.h"
+#include "common.h"
+#include "driver/ledc.h"
 #define LEDC_TIMER              LEDC_TIMER_0
 #define LEDC_MODE               LEDC_HIGH_SPEED_MODE
 //#define LEDC_OUTPUT_IO          (5) // Define the output GPIO
@@ -58,33 +60,35 @@ void led_task(void* parameters){
     printf("Led Task Begins\n");
     float H=0.0;
     float S=1.0;
-    float I=0.01;
+    float I=0.1;
     for(;;)
     {
         H += 0.004;
         if (H > 2*M_PI) H = H - 2*M_PI;
         hsi2rgbw(H,S,I);
-        vTaskDelay(10);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
+
+extern "C"{
 void ledc_init(){
-    printf("Initializing ledc\n");
+    log_printf("Initializing ledc\n");
         // Prepare and then apply the LEDC PWM timer configuration
     ledc_timer_config_t ledc_timer = {
         .speed_mode       = LEDC_MODE,
-        .timer_num        = LEDC_TIMER_0,
         .duty_resolution  = LEDC_DUTY_RES,
+        .timer_num        = LEDC_TIMER_0,
         .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 5 kHz
         .clk_cfg          = LEDC_AUTO_CLK
     };
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
     // Prepare and then apply the LEDC PWM channel configuration
     ledc_channel_config_t ledc_channel = {
+        .gpio_num       = CONFIG_GPIO_R,
         .speed_mode     = LEDC_MODE,
         .channel        = LEDC_CHANNEL_0,
-        .timer_sel      = LEDC_TIMER,
         .intr_type      = LEDC_INTR_DISABLE,
-        .gpio_num       = CONFIG_GPIO_R,
+        .timer_sel      = LEDC_TIMER,
         .duty           = 0, // Set duty to 0%
         .hpoint         = 0
     };
@@ -110,6 +114,7 @@ void ledc_init(){
         1,
         NULL
     );
+  }
 }
 
 

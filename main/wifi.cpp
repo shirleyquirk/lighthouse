@@ -1,7 +1,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "main.h"
+#include "common.h"
 #include "freertos/timers.h"
 #include "wifi.h"
 
@@ -16,13 +16,15 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         esp_wifi_connect();//xTimerStart(tmr,10);
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        log_printf("got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        
     }
 }
 /*
  * WiFi configuration
  */
-
+extern "C"
+{
 esp_err_t softap_init(void)
 {
 	esp_err_t res = ESP_OK;
@@ -36,7 +38,7 @@ esp_err_t softap_init(void)
 
 	wifi_config_t ap_config = {
 		.ap = {
-			.ssid = CONFIG_WIFI_SSID,
+			{.ssid = CONFIG_WIFI_SSID},
 			.ssid_len = strlen(CONFIG_WIFI_SSID),
 			//.channel = 6,
 			.max_connection = 3
@@ -50,7 +52,7 @@ esp_err_t softap_init(void)
     }
 
 	res |= esp_wifi_set_mode(WIFI_MODE_AP);
-	res |= esp_wifi_set_config(ESP_IF_WIFI_AP, &ap_config);
+	res |= esp_wifi_set_config(WIFI_IF_AP, &ap_config);
 	res |= esp_wifi_start();
 
 	return res;
@@ -80,10 +82,12 @@ void fast_scan()
             //.password = pass,
             .scan_method = WIFI_FAST_SCAN,
             .sort_method = WIFI_CONNECT_AP_BY_SIGNAL,
-            .threshold.rssi = -127,
-            .threshold.authmode = WIFI_AUTH_OPEN,
+            .threshold = {.rssi = -127,
+                .authmode = WIFI_AUTH_OPEN},
         }
     };
+    
+
     strcpy((char*)sta_config.sta.ssid,&ssid[0]);
     strcpy((char*)sta_config.sta.password,&pass[0]);
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -91,3 +95,4 @@ void fast_scan()
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 }
+}/*extern c*/

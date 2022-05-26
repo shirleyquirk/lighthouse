@@ -1,12 +1,15 @@
 #include "main.h"
-#include "wifi.h"
-#include "doublereset.h"
+#include "common.h"
+
 
 char ssid[32] = CONFIG_STA_SSID;
 char pass[32] = CONFIG_STA_PASS;
 char ip[16] = CONFIG_IPV4_ADDR;
 char gw[16] = CONFIG_IPV4_GW;
 nvs_handle_t preferences;
+WiFiUDP udp;
+
+
 
 static const char TAG[] = "gobo";
 /*
@@ -120,7 +123,7 @@ esp_err_t wifi_manager_handler(httpd_req_t *req)
 	key = strtok(NULL,"=");
 	strncpy(&gw[0],strtok(NULL,"&"),16);
 	(void)key;
-	printf("ssid: %s pass: %s ip: %s gw: %s\n",ssid,pass,ip,gw); 
+	ESP_LOGI(TAG,"ssid: %s pass: %s ip: %s gw: %s\n",ssid,pass,ip,gw); 
 	nvs_set_str(preferences,"ssid",ssid);
 	ESP_ERROR_CHECK(nvs_set_str(preferences,"pass",pass));
 	nvs_set_str(preferences,"ip",ip);
@@ -173,9 +176,10 @@ static esp_err_t http_server_init(void)
 }
 
 
-
+extern "C"{
 void app_main(void) {
 	esp_err_t ret = nvs_flash_init();
+
 
 	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
 		ESP_ERROR_CHECK(nvs_flash_erase());
@@ -210,7 +214,6 @@ void app_main(void) {
 		default:
 			ESP_LOGE(TAG,"error reading pass from nvs,%s\n",esp_err_to_name(ret));
 	}
-	ESP_ERROR_CHECK(ret);
 	len=sizeof(ip);
 	ret = nvs_get_str(preferences,"ip",ip,&len);
 	len=sizeof(gw);
@@ -224,8 +227,9 @@ void app_main(void) {
 	}
 	ESP_ERROR_CHECK(http_server_init());
 	ledc_init();
+	motor_init();
 
-
+	log_printf("Logging in app_main");
 	/* Mark current app as valid */
 	const esp_partition_t *partition = esp_ota_get_running_partition();
 	printf("Currently running partition: %s\r\n", partition->label);
@@ -236,6 +240,15 @@ void app_main(void) {
 			esp_ota_mark_app_valid_cancel_rollback();
 		}
 	}
-
+	   #if 0
+	   xTaskCreate(
+                    osc_send_loop,          /* Task function. */
+                    "OSC Send Loop",        /* String with name of task. */
+                    4000,            /* Stack size in bytes. */
+                    NULL,             /* Parameter passed as input of the task */
+                    2,                /* Priority of the task. */
+                    &osc_send_handle);            /* Task handle. */
+		#endif			
 	while(1) vTaskDelay(10);
+}
 }
