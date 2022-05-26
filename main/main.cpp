@@ -176,7 +176,7 @@ static esp_err_t http_server_init(void)
 }
 
 
-
+extern "C"{
 void app_main(void) {
 	esp_err_t ret = nvs_flash_init();
 
@@ -214,7 +214,6 @@ void app_main(void) {
 		default:
 			ESP_LOGE(TAG,"error reading pass from nvs,%s\n",esp_err_to_name(ret));
 	}
-	ESP_ERROR_CHECK(ret);
 	len=sizeof(ip);
 	ret = nvs_get_str(preferences,"ip",ip,&len);
 	len=sizeof(gw);
@@ -241,6 +240,7 @@ void app_main(void) {
 			esp_ota_mark_app_valid_cancel_rollback();
 		}
 	}
+	   #if 0
 	   xTaskCreate(
                     osc_send_loop,          /* Task function. */
                     "OSC Send Loop",        /* String with name of task. */
@@ -248,6 +248,7 @@ void app_main(void) {
                     NULL,             /* Parameter passed as input of the task */
                     2,                /* Priority of the task. */
                     &osc_send_handle);            /* Task handle. */
-					
+		#endif			
 	while(1) vTaskDelay(10);
+}
 }

@@ -7,6 +7,7 @@
 #include "nvs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <WiFiUdp.h>
 
 extern char ssid[32];
 extern char pass[32];

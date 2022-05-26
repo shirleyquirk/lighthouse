@@ -1,9 +1,7 @@
 #include "math.h"
-
 #include "leds.h"
 #include "common.h"
 #include "driver/ledc.h"
-
 #define LEDC_TIMER              LEDC_TIMER_0
 #define LEDC_MODE               LEDC_HIGH_SPEED_MODE
 //#define LEDC_OUTPUT_IO          (5) // Define the output GPIO

@@ -13,11 +13,11 @@
 
 #include "OSC/OSCMessage.h"
 #include "Arduino.h"
-#include <WiFiUdp.h>
 
 #include "motor.h"
-#include "encoder.h"
+//#include "encoder.h"
 #include "wifi.h"
 #include "doublereset.h"
 #include "leds.h"
 #include "common.h"
+#include "motor.h"
