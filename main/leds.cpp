@@ -1,9 +1,8 @@
 #include "math.h"
+
 #include "leds.h"
 #include "common.h"
 #include "driver/ledc.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 
 #define LEDC_TIMER              LEDC_TIMER_0
 #define LEDC_MODE               LEDC_HIGH_SPEED_MODE
@@ -75,7 +74,7 @@ void led_task(void* parameters){
 
 extern "C"{
 void ledc_init(){
-    printf("Initializing ledc\n");
+    log_printf("Initializing ledc\n");
         // Prepare and then apply the LEDC PWM timer configuration
     ledc_timer_config_t ledc_timer = {
         .speed_mode       = LEDC_MODE,
