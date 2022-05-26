@@ -2,11 +2,15 @@
 #include "wifi.h"
 #include "doublereset.h"
 
+
 char ssid[32] = CONFIG_STA_SSID;
 char pass[32] = CONFIG_STA_PASS;
 char ip[16] = CONFIG_IPV4_ADDR;
 char gw[16] = CONFIG_IPV4_GW;
 nvs_handle_t preferences;
+WiFiUDP udp;
+
+
 
 static const char TAG[] = "gobo";
 /*
@@ -177,6 +181,7 @@ static esp_err_t http_server_init(void)
 void app_main(void) {
 	esp_err_t ret = nvs_flash_init();
 
+
 	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
 		ESP_ERROR_CHECK(nvs_flash_erase());
 		ret = nvs_flash_init();
@@ -225,7 +230,7 @@ void app_main(void) {
 	ESP_ERROR_CHECK(http_server_init());
 	ledc_init();
 
-
+	log_printf("Logging in app_main");
 	/* Mark current app as valid */
 	const esp_partition_t *partition = esp_ota_get_running_partition();
 	printf("Currently running partition: %s\r\n", partition->label);

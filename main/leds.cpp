@@ -1,5 +1,6 @@
 #include "math.h"
 #include "leds.h"
+#include "main.h"
 #define LEDC_TIMER              LEDC_TIMER_0
 #define LEDC_MODE               LEDC_HIGH_SPEED_MODE
 //#define LEDC_OUTPUT_IO          (5) // Define the output GPIO
@@ -70,7 +71,7 @@ void led_task(void* parameters){
 
 extern "C"{
 void ledc_init(){
-    printf("Initializing ledc\n");
+    log_printf("Initializing ledc\n");
         // Prepare and then apply the LEDC PWM timer configuration
     ledc_timer_config_t ledc_timer = {
         .speed_mode       = LEDC_MODE,

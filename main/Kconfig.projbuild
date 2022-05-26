@@ -74,10 +74,10 @@ menu "WIFI Settings"
         default "Badger101"
     config STA_SSID
         string "Network SSID"
-        default "engorgio"
+        default "SS-Net"
     config STA_PASS
         string "Network pass"
-        default "interwebz"
+        default "Pangolin303"
     config IPV4_ADDR
         string "IPV4 Address"
         default "192.168.0.10"
@@ -90,4 +90,14 @@ menu "WIFI Settings"
     config DOUBLERESET_TIMEOUT
         int "Double Reset Timeout, ms"
         default 10000
+endmenu
+
+menu "Logging"
+    config LOG_PORT
+        int "Log Port"
+        range 0 65535
+        default 5555
+    config LOG_DEST
+        string "Log Address"
+        default "192.168.8.202"
 endmenu
