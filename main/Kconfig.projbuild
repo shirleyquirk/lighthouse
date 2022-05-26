@@ -63,6 +63,23 @@ menu "100W RGBW LED"
 #            Define the blinking period in milliseconds.
 
 endmenu
+menu "Motor Settings"
+    config MOTOR_POS
+        int "Motor GPIO IN1"
+        default 21
+    config MOTOR_NEG
+        int "Motor GPIO IN2"
+        default 22
+    config MOTOR_EN
+        int "Motor GPIO PWM"
+        default 23
+    config ENC_A
+        int "Encoder GPIO A"
+        default 19
+    config ENC_B
+        int "Encoder GPIO B"
+        default 18
+endmenu
 
 menu "WIFI Settings"
 

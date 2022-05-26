@@ -1,6 +1,5 @@
 #include "main.h"
-#include "wifi.h"
-#include "doublereset.h"
+#include "common.h"
 
 char ssid[32] = CONFIG_STA_SSID;
 char pass[32] = CONFIG_STA_PASS;
@@ -224,6 +223,7 @@ void app_main(void) {
 	}
 	ESP_ERROR_CHECK(http_server_init());
 	ledc_init();
+	motor_init();
 
 
 	/* Mark current app as valid */

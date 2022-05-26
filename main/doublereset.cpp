@@ -1,5 +1,5 @@
 /* double reset detector */
-#include "main.h"
+#include "common.h"
 #include "doublereset.h"
 #include "freertos/timers.h"
 

@@ -1,5 +1,10 @@
 #include "math.h"
 #include "leds.h"
+#include "common.h"
+#include "driver/ledc.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #define LEDC_TIMER              LEDC_TIMER_0
 #define LEDC_MODE               LEDC_HIGH_SPEED_MODE
 //#define LEDC_OUTPUT_IO          (5) // Define the output GPIO
@@ -58,13 +63,13 @@ void led_task(void* parameters){
     printf("Led Task Begins\n");
     float H=0.0;
     float S=1.0;
-    float I=0.01;
+    float I=0.1;
     for(;;)
     {
         H += 0.004;
         if (H > 2*M_PI) H = H - 2*M_PI;
         hsi2rgbw(H,S,I);
-        vTaskDelay(10);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

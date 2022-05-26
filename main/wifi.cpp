@@ -1,7 +1,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "main.h"
+#include "common.h"
 #include "freertos/timers.h"
 #include "wifi.h"
 
