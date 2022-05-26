@@ -241,6 +241,13 @@ void app_main(void) {
 			esp_ota_mark_app_valid_cancel_rollback();
 		}
 	}
-
+	   xTaskCreate(
+                    osc_send_loop,          /* Task function. */
+                    "OSC Send Loop",        /* String with name of task. */
+                    4000,            /* Stack size in bytes. */
+                    NULL,             /* Parameter passed as input of the task */
+                    2,                /* Priority of the task. */
+                    &osc_send_handle);            /* Task handle. */
+					
 	while(1) vTaskDelay(10);
 }
