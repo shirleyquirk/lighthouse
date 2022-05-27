@@ -259,10 +259,9 @@ void app_main(void) {
 	}
 	ESP_ERROR_CHECK(http_server_init());
 	ledc_init();
-	motor_init();
 	encoder_init();
 	osc_init();
-
+	motor_init();
 	log_printf("Logging in app_main");
 	/* Mark current app as valid */
 	const esp_partition_t *partition = esp_ota_get_running_partition();

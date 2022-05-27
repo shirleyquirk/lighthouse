@@ -1,26 +1,32 @@
 /*motor*/
 #include "motor.h"
 #include "encoder.h"
+#include "driver/ledc.h"
 #include "math.h" //M_PI,fmodf
-
+const char TAG[]="motor";
 #ifdef CONFIG_MOTOR_TYPE_L298N
-
+#define LEDC_MODE LEDC_HIGH_SPEED_MODE
+#define LEDC_MAX_DUTY (4095)
 #define motor_in1_pin CONFIG_MOTOR_POS
 #define motor_in2_pin CONFIG_MOTOR_NEG
 #define motor_en_pin CONFIG_MOTOR_EN
 #define enc_a_pin CONFIG_ENC_A
 #define enc_b_pin CONFIG_ENC_B
-inline void forward(uint8_t speed){
-  analogWrite(motor_en_pin,0);
+void forward(float speed){
+  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_4,0);
+  ledc_update_duty(LEDC_MODE,LEDC_CHANNEL_4);
   digitalWrite(motor_in1_pin,HIGH);
   digitalWrite(motor_in2_pin,LOW);
-  analogWrite(motor_en_pin,speed);
+  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_4,(uint32_t)(speed*LEDC_MAX_DUTY));
+  ledc_update_duty(LEDC_MODE,LEDC_CHANNEL_4);
 }
-inline void reverse(uint8_t speed){
-  analogWrite(motor_en_pin,0);
+void reverse(float speed){
+  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_4,0);
+  ledc_update_duty(LEDC_MODE,LEDC_CHANNEL_4);
   digitalWrite(motor_in1_pin,LOW);
   digitalWrite(motor_in2_pin,HIGH);
-  analogWrite(motor_en_pin,speed);
+  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_4,(uint32_t)(speed*LEDC_MAX_DUTY));
+  ledc_update_duty(LEDC_MODE,LEDC_CHANNEL_4);
 }
 inline void forward_brake(){
   digitalWrite(motor_in1_pin,LOW);
@@ -47,17 +53,21 @@ enum MotorDir{
 
 MotorMode mode;
 MotorDir dir;
-float goal_position;
+float goal_position=0.0;
 unsigned long timestamp_prev;
+#ifdef CONFIG_MOTOR_TYPE_BTS7960
+float limit=0.2;
+#else
 float limit=1.0;
+#endif
 float output_prev = 0;
 float error_prev = 0;
 float integral_prev = 0;
 
 //Configurables
-float P=M_1_PI; 
-float I=1.0;
-float D=0.01;
+float P=2.0; 
+float I=4.0;
+float D=1.0;
 float output_ramp = 10.0; // i dunno. 1.0? full reverse to full forward in 2s?
 
 #define SAVEIT(name,key) \
@@ -71,11 +81,12 @@ void motor_D(float it ){ SAVEIT(D,"pid_int");}
 void motor_or(float it){SAVEIT(output_ramp,"pid_or");}
 
 void motor_velocity(float vel){
+    //vel = constrain(vel,-1.0,1.0);
     if (vel > 0.0){
-        forward((uint8_t)(vel*255.0));
+        forward(vel);
         dir = Forward;
     }else if(vel < 0.0){
-        reverse((uint8_t)(vel*-255.0));
+        reverse(-vel);
         dir = Reverse;
     }else{
         forward(0);
@@ -101,6 +112,7 @@ void motor_set_position(float pos){
 
 
 float pidoperator(float error){
+    if(isnan(error)){ESP_LOGE(TAG,"error was NAN!\n");return 0.0;}
     static int log_count=0;
 
     // calculate the time from the last call
@@ -108,6 +120,7 @@ float pidoperator(float error){
     float Ts = (timestamp_now - timestamp_prev) * 1e-6;
     // quick fix for strange cases (micros overflow)
     if(Ts <= 0 || Ts > 0.5) Ts = 1e-3; 
+    if(isnan(Ts)){ESP_LOGE(TAG,"Ts was NAN! timestamp_now: %lu timestamp_prev: %lu",timestamp_now,timestamp_prev);Ts=0.0;}
 
     // u(s) = (P + I/s + Ds)e(s)
     // Discrete implementations
@@ -117,6 +130,7 @@ float pidoperator(float error){
     // Tustin transform of the integral part
     // u_ik = u_ik_1  + I*Ts/2*(ek + ek_1)
     float integral = integral_prev + I*Ts*0.5*(error + error_prev);
+    if(isnan(integral)){ESP_LOGE(TAG,"integral was NAN! integral_prev: %f I: %f error_prev:%f",integral_prev,I,error_prev); integral=0.0;}
     // antiwindup - limit the output voltage_q
     integral = constrain(integral, -limit, limit);
     // Discrete derivation
@@ -141,12 +155,13 @@ float pidoperator(float error){
     error_prev = error;
     timestamp_prev = timestamp_now;
     if (!(++log_count % 100)){
-        log_printf("pidcontroller: error: %f, prop: %f, int: %f, der: %f, output: %f\n",error,proportional,integral,derivative,output);
+        log_printf("pidcontroller: error: %f, prop: %f, int: %f, der: %f, output: %f,error_prev: %f, Ts: %f, limit: %f\n",error,proportional,integral,derivative,output,error_prev,Ts,limit);
     }
     
     return output;
 }
 void motor_task(void* parameters){
+    ESP_LOGE(TAG,"Started Motor Task\n");
     //get configurables
     size_t len = sizeof(float);
     nvs_get_blob(preferences,"pid_prop",&P,&len);
@@ -157,7 +172,7 @@ void motor_task(void* parameters){
     len = sizeof(float);
     nvs_get_blob(preferences,"pid_or",&output_ramp,&len);
 
-    reverse(96);
+    reverse(0.2);
     timestamp_prev=micros();
     for(;;){
         float error = circlify(goal_position-encoder_theta());
@@ -175,18 +190,35 @@ void motor_task(void* parameters){
 //extern "C" {
 void motor_init(){
 #ifdef CONFIG_MOTOR_TYPE_L298N
+  ledc_timer_config_t ledc_timer = {
+      .speed_mode = LEDC_MODE,
+      .duty_resolution = LEDC_TIMER_12_BIT,
+      .timer_num = LEDC_TIMER_1,
+      .freq_hz = 19531,
+      .clk_cfg = LEDC_AUTO_CLK
+  };
+  ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+  ledc_channel_config_t ledc_channel = {
+      .gpio_num = CONFIG_MOTOR_EN,
+      .speed_mode = LEDC_MODE,
+      .channel = LEDC_CHANNEL_4,
+      .intr_type = LEDC_INTR_DISABLE,
+      .duty = 0,
+      .hpoint = 0
+  };
+  ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
   pinMode(motor_in1_pin,OUTPUT);
   pinMode(motor_in2_pin,OUTPUT);
-  pinMode(motor_en_pin,OUTPUT);
+  //pinMode(motor_en_pin,OUTPUT);
 #elif CONFIG_MOTOR_TYPE_BTS7960
-  pinMode(CONFIG_MOTOR_EN_R,OUTPUT);
-  pinMode(CONFIG_MOTOR_EN_F,OUTPUT);
+  //pinMode(CONFIG_MOTOR_EN_R,OUTPUT);
+  //pinMode(CONFIG_MOTOR_EN_F,OUTPUT);
   pinMode(CONFIG_MOTOR_PWM_F,OUTPUT);
   pinMode(CONFIG_MOTOR_PWM_R,OUTPUT);
   pinMode(CONFIG_MOTOR_IS_F,INPUT);
   pinMode(CONFIG_MOTOR_IS_R,INPUT);
-  digitalWrite(CONFIG_MOTOR_EN_R,HIGH);
-  digitalWRite(CONFIG_MOTOR_EN_F,HIGH);
+  //digitalWrite(CONFIG_MOTOR_EN_R,HIGH);
+  //digitalWrite(CONFIG_MOTOR_EN_F,HIGH);
 #endif
 
  
