@@ -4,3 +4,6 @@
 [submodule "OSC"]
 	path = OSC
 	url = http://github.com/CNMAT/OSC
+[submodule "ESP32Encoder"]
+	path = ESP32Encoder
+	url = https://github.com/madhephaestus/ESP32Encoder

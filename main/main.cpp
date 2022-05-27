@@ -148,6 +148,36 @@ httpd_uri_t update_post = {
 	.user_ctx = NULL
 };
 
+#if 0
+esp_err_t preferences_handler(httpd_req_t *req){
+	char content[256] = {};
+	size_t remaining = req->content_len;
+	while(remaining > 0)
+	{
+		int recv_len = httpd_req_recv(req,content,MIN(remaining,sizeof(content)));
+		if (recv_len = HTTPD_SOCK_ERR_TIMEOUT){
+			continue;
+		}else if (recv_len < 0){
+			httpd_resp_send_err(req,HTTPD_500_INTERNAL_SERVER_ERROR,"Protocol Error");
+			return ESP_FAIL;
+		}
+
+		char* key = strtok(content,"=");
+
+
+	}
+	int recv_len = httpd_req_recv(req,content,recv_size);
+	(void)recv_len;
+	char *key = 
+}
+httpd_uri_t preferences = {
+	.uri = "/preferences",
+	.method = HTTP_POST,
+	.handler = preferences_handler,
+	.user_ctx = NULL
+};
+#endif
+
 httpd_uri_t wifi_manager = {
 	.uri	= "/wifi",
 	.method = HTTP_POST,
@@ -218,6 +248,8 @@ void app_main(void) {
 	ret = nvs_get_str(preferences,"ip",ip,&len);
 	len=sizeof(gw);
 	ret = nvs_get_str(preferences,"gw",gw,&len);
+
+	
 	(void)len;
 	//ESP_ERROR_CHECK(softap_init());
 	if (double_reset()){
@@ -228,6 +260,8 @@ void app_main(void) {
 	ESP_ERROR_CHECK(http_server_init());
 	ledc_init();
 	motor_init();
+	encoder_init();
+	osc_init();
 
 	log_printf("Logging in app_main");
 	/* Mark current app as valid */

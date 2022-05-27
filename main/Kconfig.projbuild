@@ -64,21 +64,58 @@ menu "100W RGBW LED"
 
 endmenu
 menu "Motor Settings"
+    choice MOTOR_TYPE
+        prompt "Motor Driver Type"
+        default MOTOR_TYPE_L298N
+        config MOTOR_TYPE_L298N
+            bool "L298N"
+        config MOTOR_TYPE_BTS7960
+            bool "BTS7960"
+    endchoice
     config MOTOR_POS
+        depends on MOTOR_TYPE_L298N
         int "Motor GPIO IN1"
         default 21
     config MOTOR_NEG
+        depends on MOTOR_TYPE_L298N
         int "Motor GPIO IN2"
         default 22
     config MOTOR_EN
+        depends on MOTOR_TYPE_L298N
         int "Motor GPIO PWM"
         default 23
+    config MOTOR_EN_R
+        depends on MOTOR_TYPE_BTS7960
+        int "Motor GPIO Reverse EN"
+        default 21
+    config MOTOR_EN_F
+        depends on MOTOR_TYPE_BTS7960
+        int "Motor GPIO EN Forward"
+        default 19
+    config MOTOR_PWM_F
+        depends on MOTOR_TYPE_BTS7960
+        int "Motor GPIO PWM Forward"
+        default 22
+    config MOTOR_PWM_R
+        depends on MOTOR_TYPE_BTS7960
+        int "Motor GPIO PWM Reverse"
+        default 23
+    config MOTOR_IS_F
+        depends on MOTOR_TYPE_BTS7960
+        int "Motor GPIO Current Sense Forward"
+        default 35
+    config MOTOR_IS_R
+        depends on MOTOR_TYPE_BTS7960
+        int "Motor GPIO Current Sense Reverse"
+        default 34
     config ENC_A
         int "Encoder GPIO A"
-        default 19
+        default 27 if MOTOR_TYPE_BTS7960
+        default 19 if MOTOR_TYPE_L298N
     config ENC_B
         int "Encoder GPIO B"
-        default 18
+        default 26 if MOTOR_TYPE_BTS7960
+        default 18 if MOTOR_TYPE_L298N
 endmenu
 
 menu "WIFI Settings"
@@ -97,13 +134,10 @@ menu "WIFI Settings"
         default "Pangolin303"
     config IPV4_ADDR
         string "IPV4 Address"
-        default "192.168.0.10"
+        default "192.168.8.22"
     config IPV4_GW
         string "IPV4 GW"
-    config OSC_PORT
-        int "OSC Port"
-        range 0 65535
-        default 1234
+        default "192.168.8.1"
     config DOUBLERESET_TIMEOUT
         int "Double Reset Timeout, ms"
         default 10000
@@ -117,4 +151,11 @@ menu "Logging"
     config LOG_DEST
         string "Log Address"
         default "192.168.8.202"
+endmenu
+
+menu "OSC Settings"
+    config OSC_PORT
+        int "OSC Port"
+        range 0 65535
+        default 8888
 endmenu
