@@ -172,7 +172,9 @@ void motor_task(void* parameters){
     len = sizeof(float);
     nvs_get_blob(preferences,"pid_or",&output_ramp,&len);
 
-    reverse(0.2);
+    motor_set_velocity(-0.5);
+    vTaskDelay(pdMS_TO_TICKS(200));
+    motor_set_velocity(-0.2);
     timestamp_prev=micros();
     for(;;){
         float error = circlify(goal_position-encoder_theta());
