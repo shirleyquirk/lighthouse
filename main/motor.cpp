@@ -70,15 +70,13 @@ float I=4.0;
 float D=1.0;
 float output_ramp = 10.0; // i dunno. 1.0? full reverse to full forward in 2s?
 
-#define SAVEIT(name,key) \
-    name=it; \
-    nvs_set_blob(preferences,key,&name,sizeof(float)); \
-    nvs_commit(preferences)
+
 
 void motor_P(float it ){ SAVEIT(P,"pid_prop");}
 void motor_I(float it ){ SAVEIT(I,"pid_int"); }
 void motor_D(float it ){ SAVEIT(D,"pid_int");}
 void motor_or(float it){SAVEIT(output_ramp,"pid_or");}
+void motor_limit(float it){SAVEIT(limit,"motor_limit");}
 
 void motor_velocity(float vel){
     //vel = constrain(vel,-1.0,1.0);
@@ -100,7 +98,7 @@ inline float circlify(float x){
 /*osc commands*/
 void motor_set_velocity(float vel){
     mode = Velocity;
-    vel = constrain(vel,-1.0,1.0);
+    vel = constrain(vel,-limit,limit);
     output_prev = vel;
     motor_velocity(vel);
 }
@@ -109,6 +107,10 @@ void motor_set_position(float pos){
     goal_position = circlify(pos); //values from -pi to pi, wrap around
 }
 
+void motor_set_oskPosition(){
+    mode = Position;
+    goal_position = map(oskP,0,1,-M_PI,M_PI);
+}
 
 
 float pidoperator(float error){
@@ -154,7 +156,7 @@ float pidoperator(float error){
     output_prev = output;
     error_prev = error;
     timestamp_prev = timestamp_now;
-    if (!(++log_count % 100)){
+    if (!(++log_count % 500)){
         log_printf("pidcontroller: error: %f, prop: %f, int: %f, der: %f, output: %f,error_prev: %f, Ts: %f, limit: %f\n",error,proportional,integral,derivative,output,error_prev,Ts,limit);
     }
     
@@ -171,8 +173,10 @@ void motor_task(void* parameters){
     nvs_get_blob(preferences,"pid_der",&D,&len);
     len = sizeof(float);
     nvs_get_blob(preferences,"pid_or",&output_ramp,&len);
-
-    motor_set_velocity(-0.5);
+    len = sizeof(float);
+    nvs_get_blob(preferences,"motor_limit",&limit,&len);
+    
+    motor_set_velocity(-1.0);
     vTaskDelay(pdMS_TO_TICKS(200));
     motor_set_velocity(-0.2);
     timestamp_prev=micros();

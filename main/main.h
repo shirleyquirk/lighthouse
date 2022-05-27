@@ -1,5 +1,8 @@
 /*variables.h*/
 /* all variables that are modifiable via osc */
+#ifndef MAIN_H
+#define MAIN_H
+
 #include <nvs_flash.h>
 #include <string.h>
 #include <freertos/FreeRTOS.h>
@@ -21,3 +24,18 @@
 #include "common.h"
 #include "motor.h"
 #include "osc.h"
+#include "oskp.h"
+#include <vector>
+
+extern char ssid[32];
+extern char pass[32];
+
+
+struct MessageInfo{
+    char[64] endpoint;
+    char[16] destip;
+};
+
+extern std::vector<MessageInfo> tick_listeners;//todo: nvs!
+
+#endif/*MAIN_H*/

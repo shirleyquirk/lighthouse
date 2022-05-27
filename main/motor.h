@@ -12,6 +12,9 @@ void motor_P(float it);
 void motor_I(float it);
 void motor_D(float it);
 void motor_or(float it);
+void motor_limit(float it);
+
+void motor_set_oskPosition();
 
 
 

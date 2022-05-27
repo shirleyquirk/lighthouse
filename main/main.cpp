@@ -9,6 +9,8 @@ char gw[16] = CONFIG_IPV4_GW;
 nvs_handle_t preferences;
 WiFiUDP udp;
 
+float minDelay=100;
+float randDelay=10000;
 
 
 static const char TAG[] = "gobo";
@@ -262,6 +264,8 @@ void app_main(void) {
 	encoder_init();
 	osc_init();
 	motor_init();
+	oskp_init();
+
 	log_printf("Logging in app_main");
 	/* Mark current app as valid */
 	const esp_partition_t *partition = esp_ota_get_running_partition();
@@ -282,6 +286,19 @@ void app_main(void) {
                     2,                /* Priority of the task. */
                     &osc_send_handle);            /* Task handle. */
 		#endif			
-	while(1) vTaskDelay(10);
+	while(1)
+	{
+		vTaskDelay(minDelay + oskP*randDelay);
+		//spoke only
+		for(MessageInfo& i:tick_listeners){
+			OSCMessage msg(i.endpoint);
+			udp.beginPacket(i.destip,1234);
+			msg.send(udp);
+			udp.endPacket();
+		}
+
+
+
+	}
 }
 }

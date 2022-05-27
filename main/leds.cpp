@@ -13,8 +13,20 @@
 
 #define DEG_TO_RAD(X) (M_PI*(X)/180)
 
+float gammas[4] = {1,1,1,1};//{2.8,2.8,2.8,2.8};
+float maxs[4] = {1,1,1,1};//{0.9,0.7,1.0,0.5};
+
+void led_gamma(RGBW col,float it)
+{
+  gammas[col]=it;
+}
+void led_max(RGBW col, float it)
+{
+  maxs[col] = it;
+}
+
 void hsi2rgbw(float H, float S, float I) {
-  uint32_t r, g, b, w;
+  float r, g, b, w;
   float cos_h, cos_1047_h;
   //H = fmod(H,360); // cycle H around to 0-360 degrees
   //H = 3.14159*H/(float)180; // Convert to radians.
@@ -24,32 +36,36 @@ void hsi2rgbw(float H, float S, float I) {
   if(H < 2.09439) {
     cos_h = cos(H);
     cos_1047_h = cos(1.047196667-H);
-    r = S*LEDC_MAX_DUTY*I/3*(1+cos_h/cos_1047_h);
-    g = S*LEDC_MAX_DUTY*I/3*(1+(1-cos_h/cos_1047_h));
+    r = S*I/3*(1+cos_h/cos_1047_h);
+    g = S*I/3*(1+(1-cos_h/cos_1047_h));
     b = 0;
-    w = LEDC_MAX_DUTY*(1-S)*I;
+    w = (1-S)*I;
   } else if(H < 4.188787) {
     H = H - 2.09439;
     cos_h = cos(H);
     cos_1047_h = cos(1.047196667-H);
-    g = S*LEDC_MAX_DUTY*I/3*(1+cos_h/cos_1047_h);
-    b = S*LEDC_MAX_DUTY*I/3*(1+(1-cos_h/cos_1047_h));
+    g = S*I/3*(1+cos_h/cos_1047_h);
+    b = S*I/3*(1+(1-cos_h/cos_1047_h));
     r = 0;
-    w = LEDC_MAX_DUTY*(1-S)*I;
+    w = (1-S)*I;
   } else {
     H = H - 4.188787;
     cos_h = cos(H);
     cos_1047_h = cos(1.047196667-H);
-    b = S*LEDC_MAX_DUTY*I/3*(1+cos_h/cos_1047_h);
-    r = S*LEDC_MAX_DUTY*I/3*(1+(1-cos_h/cos_1047_h));
+    b = S*I/3*(1+cos_h/cos_1047_h);
+    r = S*I/3*(1+(1-cos_h/cos_1047_h));
     g = 0;
-    w = LEDC_MAX_DUTY*(1-S)*I;
+    w = (1-S)*I;
   }
-  
-  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_0,r);
-  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_1,g);
-  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_2,b);
-  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_3,w);   
+  r = powf(r,gammas[0])*maxs[0];
+  g = powf(g,gammas[1])*maxs[1];
+  b = powf(b,gammas[2])*maxs[2];
+  w = powf(w,gammas[3])*maxs[3];
+
+  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_0,r*LEDC_MAX_DUTY);
+  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_1,g*LEDC_MAX_DUTY);
+  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_2,b*LEDC_MAX_DUTY);
+  ledc_set_duty(LEDC_MODE,LEDC_CHANNEL_3,w*LEDC_MAX_DUTY);   
   ledc_update_duty(LEDC_MODE,LEDC_CHANNEL_0);
   ledc_update_duty(LEDC_MODE,LEDC_CHANNEL_1);
   ledc_update_duty(LEDC_MODE,LEDC_CHANNEL_2);

@@ -38,4 +38,9 @@ extern WiFiUDP udp;
 //#define log_println(...) __log(println,__VA_ARGS__)
 //#define log_print(...) __log(print,__VA_ARGS__)
 
+#define SAVEIT(name,key) \
+    name=it; \
+    nvs_set_blob(preferences,key,&name,sizeof(float)); \
+    nvs_commit(preferences)
+
 #endif/*COMMON_H*/
