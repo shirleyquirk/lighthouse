@@ -9,4 +9,8 @@ enum RGBW{
 
 void led_gamma(RGBW col,float it);
 void led_max(RGBW col,float it);
+
+void oskHue();
+void oskI();
+
 #endif/*LEDS_H*/

@@ -15,6 +15,7 @@
 
 float gammas[4] = {1,1,1,1};//{2.8,2.8,2.8,2.8};
 float maxs[4] = {1,1,1,1};//{0.9,0.7,1.0,0.5};
+float goalHue = 0;
 
 void led_gamma(RGBW col,float it)
 {
@@ -79,11 +80,21 @@ void led_task(void* parameters){
     float I=0.1;
     for(;;)
     {
-        H += 0.004;
+        if (abs(H - goalHue) > 0.04){
+          H += (fmodf((goalHue-H)+M_PI,2*M_PI)-M_PI > 0 ? 0.04 : -0.04);
+        }
         if (H > 2*M_PI) H = H - 2*M_PI;
         hsi2rgbw(H,S,I);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(minDelay + oskP*randDelay);
     }
+}
+
+void oskHue(){
+  goalHue = oskP*2*M_PI;
+}
+
+void oskI(){
+  I = oskP;
 }
 
 extern "C"{

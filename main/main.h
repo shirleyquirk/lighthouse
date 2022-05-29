@@ -30,10 +30,17 @@
 extern char ssid[32];
 extern char pass[32];
 
+extern float minDelay;
+extern float randDelay;
+
+void set_randDelay(float it);
+void set_minDelay(float it);
+
 
 struct MessageInfo{
-    char[64] endpoint;
-    char[16] destip;
+    float probability;
+    char endpoint[64];
+    char destip[16];
 };
 
 extern std::vector<MessageInfo> tick_listeners;//todo: nvs!

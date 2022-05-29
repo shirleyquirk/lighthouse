@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <WiFiUdp.h>
+#include "oskp.h"
 
 extern char ssid[32];
 extern char pass[32];
@@ -42,5 +43,7 @@ extern WiFiUDP udp;
     name=it; \
     nvs_set_blob(preferences,key,&name,sizeof(float)); \
     nvs_commit(preferences)
+
+#define RANDOM ((float)rand()/(float)RAND_MAX)
 
 #endif/*COMMON_H*/

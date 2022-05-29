@@ -1,5 +1,6 @@
 #include "main.h"
 #include "common.h"
+#include "OSCMessage.h"
 
 
 char ssid[32] = CONFIG_STA_SSID;
@@ -11,6 +12,8 @@ WiFiUDP udp;
 
 float minDelay=100;
 float randDelay=10000;
+void set_minDelay(float it) = {SAVEIT(minDelay,"minDelay");}
+void set_randDelay(float it) = {SAVEIT(randDelay,"randDelay");}
 
 
 static const char TAG[] = "gobo";
@@ -291,10 +294,12 @@ void app_main(void) {
 		vTaskDelay(minDelay + oskP*randDelay);
 		//spoke only
 		for(MessageInfo& i:tick_listeners){
-			OSCMessage msg(i.endpoint);
-			udp.beginPacket(i.destip,1234);
-			msg.send(udp);
-			udp.endPacket();
+			if(i.probability>RANDOK){
+			  OSCMessage msg(i.endpoint);
+			  udp.beginPacket(i.destip,1234);
+			  msg.send(udp);
+			  udp.endPacket();
+			}
 		}
 
 

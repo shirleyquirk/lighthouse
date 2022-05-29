@@ -120,8 +120,9 @@ void osc_read_loop(void *parameters){
         MSGDISPATCH("/randDelay",Float,set_randDelay);
 
         msg.dispatch("/subscribe",[](OSCMessage& msg){
-            if(msg.isString(0) && msg.isString(1)){
-              MessageInfo in;
+            if(msg.isFloat(0) && msg.isString(1) && msg.isString(2)){
+              MessageInfo in = {.probability= msg.getFloat(0)};
+              //in.probability = msg.getFloat(0);
               msg.getString(0,&in.endpoint[0]);
               msg.getString(1,&in.destip[0]);
               tick_listeners.emplace_back(in);
@@ -131,7 +132,9 @@ void osc_read_loop(void *parameters){
         msg.dispatch("/motor/oskPosition",[](OSCMessage& msg){
           motor_set_oskPosition();
         });
-        msg.dispatch("/leds/oskPHue",[](OSCMessage &msg)
+        msg.dispatch("/leds/oskPHue",[](OSCMessage &msg){oskHue();});
+        
+        msg.dispatch("/leds/oskI",[](OSCMessage& msg){oskI()});
       }else{
         log_printf("osc bundle has error:");
         //log_printf(" size: %i",bundleIN.size());
